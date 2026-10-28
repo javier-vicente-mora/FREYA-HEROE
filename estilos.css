@@ -404,3 +404,75 @@ html, body {
     0% { transform: scale(1); text-shadow: 0 0 10px rgba(0, 255, 128, 0.6); }
     100% { transform: scale(1.05); text-shadow: 0 0 25px rgba(0, 255, 128, 1); }
 }
+
+/* --- PARTÍCULAS DE ACIERTO --- */
+/* --- PARTÍCULAS DE ACIERTO (Más visibles y brillantes) --- */
+.particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    /* Posicionamos las partículas justo en el centro horizontal del carril y a la altura del círculo objetivo */
+    bottom: 45px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    box-shadow: 0 0 8px currentColor;
+    animation: particleFly 0.4s ease-out forwards;
+    z-index: 100;
+}
+
+@keyframes particleFly {
+    0% { 
+        transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.2); 
+        opacity: 1; 
+    }
+    100% { 
+        transform: translate(calc(-50% + var(--dx)), calc(var(--dy) - 40px)) scale(0.2); 
+        opacity: 0; 
+    }
+}
+
+/* --- MODO FEVER (Combo >= 15) --- */
+.arcade-container.fever-mode {
+    border-color: #ff007f;
+    box-shadow: 0 0 40px rgba(255, 0, 127, 0.7), inset 0 0 25px rgba(0, 243, 255, 0.3);
+    animation: feverPulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes feverPulse {
+    0% {
+        border-color: #ff007f;
+        box-shadow: 0 0 30px rgba(255, 0, 127, 0.5), inset 0 0 15px rgba(0, 243, 255, 0.2);
+    }
+    100% {
+        border-color: #00f3ff;
+        box-shadow: 0 0 50px rgba(0, 243, 255, 0.8), inset 0 0 30px rgba(255, 0, 127, 0.5);
+    }
+}
+
+/* --- EFECTO SCREEN SHAKE (Sacudida al fallar) --- */
+@keyframes shakeAnim {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-6px, 4px); }
+    40% { transform: translate(6px, -4px); }
+    60% { transform: translate(-4px, -6px); }
+    80% { transform: translate(4px, 6px); }
+    100% { transform: translate(0, 0); }
+}
+
+.arcade-container.shake {
+    animation: shakeAnim 0.2s ease-in-out;
+}
+
+/* Estilo para un cuadro o texto inferior con diseño elegante */
+.texto-fuera-cuadro {
+    margin-top: 25px;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #2980b9;
+    border-radius: 4px;
+    font-style: italic;
+    color: #555;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}

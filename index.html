@@ -11,17 +11,35 @@
     <meta property="og:url" content="https://javier-vicente-mora.github.io/FREYA-HEROE/">
     <meta property="og:type" content="website">
     <link rel="stylesheet" href="estilos.css">
-
+    <style>
+        /* Estilo elegante para el autor fuera del cuadro */
+        .author-footer {
+            margin-top: 18px;
+            font-size: 0.8rem;
+            color: #a0aec0;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: center;
+            opacity: 0.85;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+        .author-footer span {
+            color: #00f3ff;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body class="menu-body">
 
-    <div class="menu-container">
-        <!-- Imagen solicitada -->
-        <div class="hero-image-container">
-            <img src="img/foto.png" alt="Neon Pulse Art" class="hero-img" onerror="this.src='https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80'">
-        </div>
+    <div class="menu-container" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; padding: 20px;">
+        
+        <!-- Caja principal -->
+        <div class="menu-content" style="width: 100%; max-width: 380px;">
+            <!-- Imagen solicitada -->
+            <div class="hero-image-container">
+                <img src="img/foto.png" alt="Neon Pulse Art" class="hero-img" onerror="this.src='https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80'">
+            </div>
 
-        <div class="menu-content">
             <h1 class="game-title">FREYA SKYE <span>MUSIC</span></h1>
             <p class="game-subtitle">Siente el ritmo!</p>
 
@@ -36,13 +54,18 @@
                         <option value="canciones/musica4.mp3">Silent Treatment</option> 
                         <option value="canciones/musica5.mp3">The Place to Be</option>                            
                        <!--<option value="canciones/aromas ilicitanos.mp3">Aromas Ilicitanos</option>-->
-                        
                     </select>
                 </div>
             </div>
 
             <button id="start-btn" class="neon-btn">JUGAR AHORA</button>
         </div>
+
+        <!-- Autor fuera del cuadro y centrado debajo -->
+        <div class="author-footer">
+            Creado por <span>Javier Vicente Mora</span>
+        </div>
+
     </div>
 
     <script>

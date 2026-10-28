@@ -25,6 +25,7 @@ const progressBarFill = document.getElementById('progress-bar-fill');
 const timeDisplay = document.getElementById('time-display');
 const songTitleDisplay = document.getElementById('song-title-display');
 
+
 // Clave para guardar el récord en localStorage
 const STORAGE_KEY = 'freyaSkyeMusicHighScore';
 
@@ -75,18 +76,30 @@ function createNote(colIndex) {
     
     note.style.animationDuration = `${currentFallDuration}ms`;
     
-    // Toque directo en la nota con pointerdown para evitar que se quede congelada
+    // Toque directo en la nota
     const handleNotePress = (e) => {
         e.stopPropagation();
         e.preventDefault();
         if (!isPlaying || isStarting) return;
 
         clearTimeout(note.dataset.missTimeout);
+        
+        // Definir el color de la chispa según el carril
+        let noteColor = '#00f3ff';
+        if (lane === lanes[0]) noteColor = '#ff007f';
+        else if (lane === lanes[1]) noteColor = '#00f3ff';
+        else if (lane === lanes[2]) noteColor = '#ffe600';
+        else if (lane === lanes[3]) noteColor = '#00ff80';
+
         note.remove(); // Elimina la nota inmediatamente al acertar
 
-        showFeedback("¡ACIERTO!", "#00f3ff");
+        showFeedback("¡ACIERTO!", noteColor);
         score += 100 * (combo > 0 ? combo : 1);
         combo++;
+        
+        // --- ¡AQUÍ ESTABA EL TRUCO! Lanzamos las partículas ---
+        spawnParticles(lane, noteColor);
+        
         updateUI();
     };
 
@@ -114,6 +127,7 @@ lanes.forEach((lane) => {
 
         const notesInLane = lane.querySelectorAll('.falling-note');
         let hit = false;
+        let noteColor = '#00f3ff';
 
         notesInLane.forEach(note => {
             const rect = note.getBoundingClientRect();
@@ -124,13 +138,20 @@ lanes.forEach((lane) => {
                 clearTimeout(note.dataset.missTimeout);
                 note.remove(); 
                 hit = true;
+                
+                // Definir el color de la chispa según el carril
+                if (lane === lanes[0]) noteColor = '#ff007f';
+                if (lane === lanes[1]) noteColor = '#00f3ff';
+                if (lane === lanes[2]) noteColor = '#ffe600';
+                if (lane === lanes[3]) noteColor = '#00ff80';
             }
         });
 
         if (hit) {
-            showFeedback("¡ACIERTO!", "#00f3ff");
+            showFeedback("¡ACIERTO!", noteColor);
             score += 100 * (combo > 0 ? combo : 1);
             combo++;
+            spawnParticles(lane, noteColor); // <-- Genera las chispas aquí
             updateUI();
         } else {
             registerMiss();
@@ -138,10 +159,41 @@ lanes.forEach((lane) => {
     });
 });
 
+// Función que crea las chispas de colores
+function spawnParticles(lane, color) {
+    for (let i = 0; i < 8; i++) { // 8 chispas por acierto para que sea más vistoso
+        const p = document.createElement('div');
+        p.classList.add('particle');
+        p.style.backgroundColor = color;
+        p.style.color = color; // Para que funcione el box-shadow de brillo
+
+        // Ángulo aleatorio en abanico hacia los lados y arriba
+        const angle = (Math.random() * Math.PI); // de 0 a 180 grados hacia arriba
+        const distance = Math.random() * 50 + 20; // Distancia de dispersión
+        
+        const dx = Math.cos(angle) * distance - (distance / 2);
+        const dy = -Math.sin(angle) * distance;
+
+        p.style.setProperty('--dx', `${dx}px`);
+        p.style.setProperty('--dy', `${dy}px`);
+
+        lane.appendChild(p);
+        
+        // Eliminar la partícula al terminar la animación (400ms)
+        setTimeout(() => {
+            p.remove();
+        }, 400);
+    }
+}
+
 function registerMiss() {
     combo = 0;
     lives--;
-    showFeedback("¡FALLO!", "#ff007f");
+    showFeedback("¡FALLO!", "#ff007f"); // <-- Quita el cuadrito de color de ahí
+
+    // --- ACTIVAR SACUDIDA DE PANTALLA ---
+    triggerScreenShake();
+
     updateUI();
 
     if (lives <= 0) {
@@ -149,16 +201,15 @@ function registerMiss() {
     }
 }
 
-function registerMiss() {
-    combo = 0;
-    lives--;
-    showFeedback("¡FALLO!", "#ff007f");
-    updateUI();
-
-    if (lives <= 0) {
-        triggerGameOver();
-    }
+// Función que aplica y quita la clase de sacudida durante 200ms
+function triggerScreenShake() {
+    arcadeContainer.classList.add('shake');
+    setTimeout(() => {
+        arcadeContainer.classList.remove('shake');
+    }, 200);
 }
+
+
 
 let feedbackTimeout = null;
 
@@ -176,6 +227,9 @@ function showFeedback(text, color) {
     }, 350);
 }
 
+// Referencia al contenedor arcade (si no la tienes arriba del todo, puedes declararla o usar querySelector)
+const arcadeContainer = document.querySelector('.arcade-container');
+
 function updateUI() {
     scoreEl.textContent = score;
     comboEl.textContent = combo;
@@ -183,6 +237,13 @@ function updateUI() {
     let hearts = '';
     for (let i = 0; i < lives; i++) hearts += '❤️';
     livesEl.textContent = hearts || '💔';
+
+    // --- ACTIVAR / DESACTIVAR MODO FEVER ---
+    if (combo >= 15) {
+        arcadeContainer.classList.add('fever-mode');
+    } else {
+        arcadeContainer.classList.remove('fever-mode');
+    }
 }
 
 // Progreso de la canción (2 minutos = 120 segundos)
