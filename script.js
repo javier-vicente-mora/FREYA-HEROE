@@ -3,7 +3,7 @@ let combo = 0;
 let lives = 3;
 let isPlaying = true;
 let spawnTimer = null;
-let isStarting = false; // Escudo antihuecos/clics fantasma
+let isStarting = false; 
 
 // Velocidad inicial (en milisegundos que tarda la nota en caer)
 let currentFallDuration = 3000; 
@@ -75,14 +75,14 @@ function createNote(colIndex) {
     
     note.style.animationDuration = `${currentFallDuration}ms`;
     
-    // Toque directo en la nota
+    // Toque directo en la nota con pointerdown para evitar que se quede congelada
     const handleNotePress = (e) => {
         e.stopPropagation();
         e.preventDefault();
         if (!isPlaying || isStarting) return;
 
         clearTimeout(note.dataset.missTimeout);
-        note.remove();
+        note.remove(); // Elimina la nota inmediatamente al acertar
 
         showFeedback("¡ACIERTO!", "#00f3ff");
         score += 100 * (combo > 0 ? combo : 1);
@@ -105,15 +105,40 @@ function createNote(colIndex) {
 }
 
 // Fallo si se toca el carril en vacío
+// --- SISTEMA DE TOQUE POR CARRIL (Optimizado y sin bloqueo de aciertos) ---
+// --- SISTEMA DE TOQUE POR CARRIL (Optimizado y sin bloqueo de aciertos) ---
 lanes.forEach((lane) => {
     lane.addEventListener('pointerdown', (e) => {
-        if (!isPlaying || isStarting) return; // Bloquea toques si está el escudo activo
-        registerMiss();
+        e.preventDefault();
+        if (!isPlaying || isStarting) return;
+
+        const notesInLane = lane.querySelectorAll('.falling-note');
+        let hit = false;
+
+        notesInLane.forEach(note => {
+            const rect = note.getBoundingClientRect();
+            const laneRect = lane.getBoundingClientRect();
+            const distanceFromBottom = laneRect.bottom - rect.bottom;
+
+            if (distanceFromBottom >= -20 && distanceFromBottom <= 110) {
+                clearTimeout(note.dataset.missTimeout);
+                note.remove(); 
+                hit = true;
+            }
+        });
+
+        if (hit) {
+            showFeedback("¡ACIERTO!", "#00f3ff");
+            score += 100 * (combo > 0 ? combo : 1);
+            combo++;
+            updateUI();
+        } else {
+            registerMiss();
+        }
     });
 });
 
 function registerMiss() {
-    if (isStarting) return; // Doble seguridad contra fallos al iniciar
     combo = 0;
     lives--;
     showFeedback("¡FALLO!", "#ff007f");
@@ -124,12 +149,31 @@ function registerMiss() {
     }
 }
 
+function registerMiss() {
+    combo = 0;
+    lives--;
+    showFeedback("¡FALLO!", "#ff007f");
+    updateUI();
+
+    if (lives <= 0) {
+        triggerGameOver();
+    }
+}
+
+let feedbackTimeout = null;
+
 function showFeedback(text, color) {
     feedbackTxt.textContent = text;
     feedbackTxt.style.color = color;
     feedbackTxt.classList.remove('show');
-    void feedbackTxt.offsetWidth;
+    void feedbackTxt.offsetWidth; // Reinicia la animación
     feedbackTxt.classList.add('show');
+
+    // Limpia el temporizador anterior si existe y oculta el texto tras 350 milisegundos
+    if (feedbackTimeout) clearTimeout(feedbackTimeout);
+    feedbackTimeout = setTimeout(() => {
+        feedbackTxt.classList.remove('show');
+    }, 350);
 }
 
 function updateUI() {
@@ -206,11 +250,11 @@ function resetAndRestartGame() {
     updateUI();
     modalOverlay.classList.add('hidden');
     
-    // --- ESCUDO ANTICLICS FANTASMAS AMPLIADO (600ms) ---
+    // Escudo exacto de 300ms para ignorar el residuo del botón de reanudar
     isStarting = true;
     setTimeout(() => {
         isStarting = false;
-    }, 600);
+    }, 300);
 
     if (selectedMusic !== 'off') {
         gameAudio.currentTime = 0;
@@ -221,10 +265,9 @@ function resetAndRestartGame() {
     startSpawner();
 }
 
-// Botones del Modal con bloqueo de eventos táctiles
-resumeBtn.addEventListener('pointerdown', (e) => {
+// Botones del Modal con pointerdown seguro
+resumeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    e.preventDefault();
     resetAndRestartGame();
 });
 
@@ -265,9 +308,26 @@ function checkAndSaveHighScore() {
 }
 
 function triggerGameOver() {
+    if (!isPlaying) return; // Evita que se ejecute varias veces si ya estamos en Game Over
     isPlaying = false;
+    
+    // Limpia todas las notas que estén cayendo en el momento de morir
+    document.querySelectorAll('.falling-note').forEach(note => {
+        clearTimeout(note.dataset.missTimeout);
+        note.remove();
+    });
+
     if (spawnTimer) clearTimeout(spawnTimer);
-    if (selectedMusic !== 'off') gameAudio.pause();
+    
+    // Detenemos la música de fondo
+    if (selectedMusic !== 'off') {
+        gameAudio.pause();
+    }
+
+    // Reproducir sonido de Game Over una sola vez
+    const gameOverAudio = new Audio('canciones/game_over.mp3');
+    gameOverAudio.volume = 1.0;
+    gameOverAudio.play().catch(e => console.log("Audio de Game Over bloqueado:", e));
 
     const { highScore, isNewRecord } = checkAndSaveHighScore();
 
