@@ -10,21 +10,22 @@
 
 html, body {
     width: 100%;
-    height: 100vh;
+    height: 100%;
     background-color: #05070f;
     color: #ffffff;
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    position: fixed; /* Evita rebotes raros en móvil */
 }
 
-/* Contenedor Principal Estilo Arcade (Ocupa toda la pantalla o se limita en PC) */
+/* Contenedor Principal Estilo Arcade adaptado a móviles */
 .arcade-container {
     width: 100%;
     max-width: 480px;
     height: 100%;
-    max-height: 100vh;
+    height: 100dvh; /* Altura dinámica real para móviles modernos */
     background: linear-gradient(135deg, #0a0d1a 0%, #121629 100%);
     border-left: 2px solid #00f3ff;
     border-right: 2px solid #00f3ff;
@@ -156,13 +157,14 @@ html, body {
     flex-direction: column;
     width: 100%;
     height: 100%;
+    overflow: hidden;
 }
 
 .game-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 15px;
+    padding: 10px 15px;
     background: rgba(10, 13, 26, 0.9);
     border-bottom: 1px solid rgba(0, 243, 255, 0.3);
 }
@@ -173,13 +175,13 @@ html, body {
 
 .stat-box span {
     display: block;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: #a0aec0;
     letter-spacing: 1px;
 }
 
 .stat-box strong {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #00f3ff;
 }
 
@@ -187,7 +189,7 @@ html, body {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid #00f3ff;
     color: #fff;
-    padding: 6px 12px;
+    padding: 4px 10px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
@@ -195,24 +197,24 @@ html, body {
 
 /* Barra de Progreso */
 .song-progress-container {
-    padding: 6px 15px;
+    padding: 5px 15px;
     background: rgba(5, 7, 15, 0.9);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .progress-info {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #a0aec0;
 }
 
 .progress-bar {
     width: 100%;
-    height: 6px;
+    height: 5px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
     overflow: hidden;
@@ -242,22 +244,23 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    padding-bottom: 30px;
+    padding-bottom: 15px;
     height: 100%;
+    touch-action: manipulation; /* Mejora la respuesta táctil en móviles */
 }
 
 .lane:last-child {
     border-right: none;
 }
 
-/* Círculos Objetivo Abajo */
+/* Círculos Objetivo Abajo (Alineados correctamente) */
 .target-circle {
     width: 50px;
     height: 50px;
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     position: absolute;
-    bottom: 30px;
+    bottom: 20px;
 }
 
 .lane:nth-child(1) .target-circle { border-color: #ff007f; box-shadow: 0 0 10px #ff007f; }
@@ -265,7 +268,7 @@ html, body {
 .lane:nth-child(3) .target-circle { border-color: #ffe600; box-shadow: 0 0 10px #ffe600; }
 .lane:nth-child(4) .target-circle { border-color: #00ff80; box-shadow: 0 0 10px #00ff80; }
 
-/* Notas que Caen */
+/* Notas que Caen (Ajustadas a la nueva altura) */
 .falling-note {
     width: 50px;
     height: 50px;
@@ -283,7 +286,7 @@ html, body {
 
 @keyframes fall {
     0% { top: -60px; }
-    100% { top: calc(100% - 80px); }
+    100% { top: calc(100% - 70px); }
 }
 
 /* Feedback visual de Acierto / Fallo */
@@ -363,7 +366,7 @@ html, body {
     padding: 12px;
     font-size: 1rem;
     font-weight: bold;
-    border-radius: 12px;
+    border-register: 12px;
     cursor: pointer;
     border: none;
     transition: transform 0.1s ease, box-shadow 0.2s ease;
