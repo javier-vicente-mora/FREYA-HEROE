@@ -37,6 +37,8 @@ if (selectedMusic !== 'off') {
     if (selectedMusic.includes('musica.mp3')) songTitleDisplay.textContent = 'Golden Boy';
     if (selectedMusic.includes('musica2.mp3')) songTitleDisplay.textContent = 'Bad Taste';
     if (selectedMusic.includes('musica3.mp3')) songTitleDisplay.textContent = 'Dream Come True';
+    if (selectedMusic.includes('musica4.mp3')) songTitleDisplay.textContent = 'Silent Treatment';
+    if (selectedMusic.includes('musica5.mp3')) songTitleDisplay.textContent = 'The Place to Be';
     
     gameAudio.play().catch(e => console.log("Audio esperando interacción:", e));
 } else {
