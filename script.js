@@ -3,9 +3,9 @@ let combo = 0;
 let lives = 3;
 let isPlaying = true;
 let spawnTimer = null;
+let isStarting = false; // Escudo antihuecos/clics fantasma
 
-// Velocidad inicial (en milisegundos que tarda la nota en caer de arriba a abajo)
-// Cuanto mayor sea el número, más lenta cae. 3000ms = 3 segundos.
+// Velocidad inicial (en milisegundos que tarda la nota en caer)
 let currentFallDuration = 3000; 
 
 // Referencias del DOM
@@ -35,18 +35,14 @@ if (selectedMusic !== 'off') {
     gameAudio.src = selectedMusic;
     if (selectedMusic.includes('musica.mp3')) songTitleDisplay.textContent = 'Golden Boy';
     if (selectedMusic.includes('musica2.mp3')) songTitleDisplay.textContent = 'Bad Taste';
-    if (selectedMusic.includes('musica3.mp3')) songTitleDisplay.textContent = 'Dream Come True';    
-    if (selectedMusic.includes('musica4.mp3')) songTitleDisplay.textContent = 'Silent Treatment';
-    if (selectedMusic.includes('musica5.mp3')) songTitleDisplay.textContent = 'The Place to Be';
-   // if (selectedMusic.includes('aromas ilicitanos.mp3')) songTitleDisplay.textContent = 'Aromas Ilicitanos';
+    if (selectedMusic.includes('musica3.mp3')) songTitleDisplay.textContent = 'Dream Come True';
     
-
     gameAudio.play().catch(e => console.log("Audio esperando interacción:", e));
 } else {
     songTitleDisplay.textContent = 'Modo Silencioso';
 }
 
-// Iniciar bucle de creación de notas (estilo Guitar Hero con dobles)
+// Iniciar bucle de creación de notas
 function startSpawner() {
     if (spawnTimer) clearTimeout(spawnTimer);
 
@@ -77,13 +73,13 @@ function createNote(colIndex) {
     const note = document.createElement('div');
     note.classList.add('falling-note');
     
-    // Usamos la velocidad actual calculada por el temporizador de 5 segundos
     note.style.animationDuration = `${currentFallDuration}ms`;
     
     // Toque directo en la nota
     const handleNotePress = (e) => {
         e.stopPropagation();
-        if (!isPlaying) return;
+        e.preventDefault();
+        if (!isPlaying || isStarting) return;
 
         clearTimeout(note.dataset.missTimeout);
         note.remove();
@@ -111,13 +107,13 @@ function createNote(colIndex) {
 // Fallo si se toca el carril en vacío
 lanes.forEach((lane) => {
     lane.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        if (!isPlaying) return;
+        if (!isPlaying || isStarting) return; // Bloquea toques si está el escudo activo
         registerMiss();
     });
 });
 
 function registerMiss() {
+    if (isStarting) return; // Doble seguridad contra fallos al iniciar
     combo = 0;
     lives--;
     showFeedback("¡FALLO!", "#ff007f");
@@ -160,17 +156,13 @@ const progressInterval = setInterval(() => {
     let progressPercent = (songTime / maxSongTime) * 100;
     progressBarFill.style.width = `${progressPercent}%`;
 
-    // --- CADA 5 SEGUNDOS SUBE UN PELÍN LA VELOCIDAD ---
+    // Aceleración suave cada 5 segundos
     if (songTime % 5 === 0) {
-        // Reducimos el tiempo de caída un poquito (haciendo que vayan más rápido)
-        // Pero ponemos un límite (por ejemplo, 1400ms) para que no sea imposible de jugar
         if (currentFallDuration > 1400) {
-            currentFallDuration -= 120; // Se acelera de forma suave cada 5s
-            console.log("Velocidad incrementada. Nueva duración de caída:", currentFallDuration);
+            currentFallDuration -= 120; 
         }
     }
 
-    // Si se acaba la canción y quedan vidas -> Victoria
     if (songTime >= maxSongTime) {
         if (lives > 0) {
             triggerVictory();
@@ -178,7 +170,7 @@ const progressInterval = setInterval(() => {
     }
 }, 1000);
 
-// Controles de pausa y reanudar
+// Controles de pausa
 pauseBtn.addEventListener('click', togglePause);
 
 function togglePause() {
@@ -210,10 +202,16 @@ function resetAndRestartGame() {
     combo = 0;
     lives = 3;
     songTime = 0;
-    currentFallDuration = 3000; // Reinicia a la velocidad inicial suave
+    currentFallDuration = 3000;
     updateUI();
     modalOverlay.classList.add('hidden');
     
+    // --- ESCUDO ANTICLICS FANTASMAS AMPLIADO (600ms) ---
+    isStarting = true;
+    setTimeout(() => {
+        isStarting = false;
+    }, 600);
+
     if (selectedMusic !== 'off') {
         gameAudio.currentTime = 0;
         gameAudio.play().catch(e => console.log("Audio reiniciado:", e));
@@ -223,8 +221,18 @@ function resetAndRestartGame() {
     startSpawner();
 }
 
-resumeBtn.addEventListener('click', resetAndRestartGame);
-menuBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
+// Botones del Modal con bloqueo de eventos táctiles
+resumeBtn.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    resetAndRestartGame();
+});
+
+menuBtn.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    window.location.href = 'index.html';
+});
 
 function generateScoreHTML(score, highScore, isNewRecord) {
     let html = `
