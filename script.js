@@ -38,7 +38,7 @@ if (selectedMusic !== 'off') {
     if (selectedMusic.includes('musica3.mp3')) songTitleDisplay.textContent = 'Dream Come True';    
     if (selectedMusic.includes('musica4.mp3')) songTitleDisplay.textContent = 'Silent Treatment';
     if (selectedMusic.includes('musica5.mp3')) songTitleDisplay.textContent = 'The Place to Be';
-    if (selectedMusic.includes('aromas ilicitanos.mp3')) songTitleDisplay.textContent = 'Aromas Ilicitanos';
+   // if (selectedMusic.includes('aromas ilicitanos.mp3')) songTitleDisplay.textContent = 'Aromas Ilicitanos';
     
 
     gameAudio.play().catch(e => console.log("Audio esperando interacción:", e));
