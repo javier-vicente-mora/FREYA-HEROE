@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Rhythm - Menú Principal</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body class="menu-body">
+
+    <div class="menu-container">
+        <!-- Imagen solicitada -->
+        <div class="hero-image-container">
+            <img src="img/foto.png" alt="Neon Pulse Art" class="hero-img" onerror="this.src='https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80'">
+        </div>
+
+        <div class="menu-content">
+            <h1 class="game-title">FREYA SKYE <span>MUSIC</span></h1>
+            <p class="game-subtitle">Siente el ritmo!</p>
+
+            <div class="config-box">
+                <div class="form-group">
+                    <label for="music-select">ELIGE CANCIÓN:</label>
+                    <select id="music-select">
+                        <option value="off" selected>OFF (Sin música)</option>
+                        <option value="canciones/musica.mp3">Golden Boy</option>
+                        <option value="canciones/musica2.mp3">Bad Taste</option>
+                        <option value="canciones/musica3.mp3">Dream Come True</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="start-btn" class="neon-btn">JUGAR AHORA</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('start-btn').addEventListener('click', () => {
+            const selectedMusic = document.getElementById('music-select').value;
+            // Guardamos la música seleccionada en localStorage para usarla en juego.html
+            localStorage.setItem('selectedMusic', selectedMusic);
+            window.location.href = 'juego.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Pulse - Mobile</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body class="game-body">
+
+    <div class="game-wrapper">
+        <!-- Panel Superior -->
+        <header class="game-header">
+            <div class="stat-box">
+                <span class="stat-label">SCORE</span>
+                <span id="score-el" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">COMBO</span>
+                <span id="combo-el" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">LIVES</span>
+                <div id="lives-el" class="lives-icons">❤️❤️❤️</div>
+            </div>
+            <button id="pause-btn" class="pause-btn" title="Pausa">⏸</button>
+        </header>
+
+        <!-- Feedback visual -->
+        <div id="feedback-txt" class="feedback-txt"></div>
+
+        <!-- Área de las Pistas / Carriles -->
+        <div class="lane-container">
+            <div class="lane" data-col="0">
+                <div class="target-circle"></div>
+            </div>
+            <div class="lane" data-col="1">
+                <div class="target-circle"></div>
+            </div>
+            <div class="lane" data-col="2">
+                <div class="target-circle"></div>
+            </div>
+            <div class="lane" data-col="3">
+                <div class="target-circle"></div>
+            </div>
+        </div>
+
+        <!-- Panel Inferior -->
+        <footer class="game-footer">
+            <div class="song-info">
+                <span class="equalizer">📊</span>
+                <div>
+                    <small>SONG</small>
+                    <div id="song-title-display">Neon Pulse</div>
+                </div>
+            </div>
+            <div class="song-progress">
+                <span id="time-display">00:00 / 02:00</span>
+                <div class="progress-bar-bg">
+                    <div id="progress-bar-fill"></div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal de Pausa / Game Over -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">JUEGO PAUSADO</h2>
+            <<p id="modal-score-text"><span id="final-score">0</span></p>
+            <div class="modal-buttons">
+                <button id="resume-btn" class="neon-btn">Reanudar</button>
+                <button id="menu-btn" class="neon-btn secondary">Menú Principal</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="game-audio" loop></audio>
+
+    <script src="script.js"></script>
+</body>
+</html>
