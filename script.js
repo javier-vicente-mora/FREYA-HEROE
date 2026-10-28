@@ -4,7 +4,9 @@ let lives = 3;
 let isPlaying = true;
 let spawnTimer = null;
 
-let currentFallDuration = 2600; 
+// Velocidad inicial (en milisegundos que tarda la nota en caer de arriba a abajo)
+// Cuanto mayor sea el número, más lenta cae. 3000ms = 3 segundos.
+let currentFallDuration = 3000; 
 
 // Referencias del DOM
 const scoreEl = document.getElementById('score-el');
@@ -23,6 +25,9 @@ const progressBarFill = document.getElementById('progress-bar-fill');
 const timeDisplay = document.getElementById('time-display');
 const songTitleDisplay = document.getElementById('song-title-display');
 
+// Clave para guardar el récord en localStorage
+const STORAGE_KEY = 'freyaSkyeMusicHighScore';
+
 // Cargar música seleccionada
 const selectedMusic = localStorage.getItem('selectedMusic') || 'off';
 
@@ -30,14 +35,18 @@ if (selectedMusic !== 'off') {
     gameAudio.src = selectedMusic;
     if (selectedMusic.includes('musica.mp3')) songTitleDisplay.textContent = 'Golden Boy';
     if (selectedMusic.includes('musica2.mp3')) songTitleDisplay.textContent = 'Bad Taste';
-    if (selectedMusic.includes('musica3.mp3')) songTitleDisplay.textContent = 'Dream Come True';
+    if (selectedMusic.includes('musica3.mp3')) songTitleDisplay.textContent = 'Dream Come True';    
+    if (selectedMusic.includes('musica4.mp3')) songTitleDisplay.textContent = 'Silent Treatment';
+    if (selectedMusic.includes('musica5.mp3')) songTitleDisplay.textContent = 'The Place to Be';
+    if (selectedMusic.includes('aromas ilicitanos.mp3')) songTitleDisplay.textContent = 'Aromas Ilicitanos';
     
+
     gameAudio.play().catch(e => console.log("Audio esperando interacción:", e));
 } else {
     songTitleDisplay.textContent = 'Modo Silencioso';
 }
 
-// Iniciar bucle de creación de notas
+// Iniciar bucle de creación de notas (estilo Guitar Hero con dobles)
 function startSpawner() {
     if (spawnTimer) clearTimeout(spawnTimer);
 
@@ -47,7 +56,7 @@ function startSpawner() {
         const firstLaneIndex = Math.floor(Math.random() * 4);
         createNote(firstLaneIndex);
 
-        // Probabilidad de nota doble (estilo Guitar Hero)
+        // Probabilidad de nota doble (35%)
         if (Math.random() < 0.35) {
             let secondLaneIndex;
             do {
@@ -56,7 +65,7 @@ function startSpawner() {
             createNote(secondLaneIndex);
         }
 
-        const randomDelay = Math.floor(Math.random() * 700) + 450;
+        const randomDelay = Math.floor(Math.random() * 600 + 400);
         spawnTimer = setTimeout(scheduleNextSpawn, randomDelay);
     }
     
@@ -68,10 +77,7 @@ function createNote(colIndex) {
     const note = document.createElement('div');
     note.classList.add('falling-note');
     
-    if (currentFallDuration > 1300) {
-        currentFallDuration -= 5;
-    }
-
+    // Usamos la velocidad actual calculada por el temporizador de 5 segundos
     note.style.animationDuration = `${currentFallDuration}ms`;
     
     // Toque directo en la nota
@@ -139,7 +145,7 @@ function updateUI() {
     livesEl.textContent = hearts || '💔';
 }
 
-// Progreso de la canción (2 minutos)
+// Progreso de la canción (2 minutos = 120 segundos)
 let songTime = 0;
 const maxSongTime = 120; 
 
@@ -154,8 +160,21 @@ const progressInterval = setInterval(() => {
     let progressPercent = (songTime / maxSongTime) * 100;
     progressBarFill.style.width = `${progressPercent}%`;
 
+    // --- CADA 5 SEGUNDOS SUBE UN PELÍN LA VELOCIDAD ---
+    if (songTime % 5 === 0) {
+        // Reducimos el tiempo de caída un poquito (haciendo que vayan más rápido)
+        // Pero ponemos un límite (por ejemplo, 1400ms) para que no sea imposible de jugar
+        if (currentFallDuration > 1400) {
+            currentFallDuration -= 120; // Se acelera de forma suave cada 5s
+            console.log("Velocidad incrementada. Nueva duración de caída:", currentFallDuration);
+        }
+    }
+
+    // Si se acaba la canción y quedan vidas -> Victoria
     if (songTime >= maxSongTime) {
-        triggerVictory();
+        if (lives > 0) {
+            triggerVictory();
+        }
     }
 }, 1000);
 
@@ -167,12 +186,13 @@ function togglePause() {
     if (!isPlaying) {
         if (selectedMusic !== 'off') gameAudio.pause();
         modalTitle.textContent = "JUEGO PAUSADO";
+        modalTitle.classList.remove('victory-title');
+        modalOverlay.querySelector('.modal-content').classList.remove('victory-glow');
         
-        // Mostrar score actual y récord también al pausar
-        let highScore = localStorage.getItem('neonHighScore') || 0;
+        let highScore = localStorage.getItem(STORAGE_KEY) || 0;
         if (score > highScore) highScore = score;
-        finalScore.innerHTML = `Puntuación: <b>${score}</b><br><span style="font-size:0.85rem; color:#ffcc00;">🏆 Récord: ${highScore}</span>`;
         
+        finalScore.innerHTML = generateScoreHTML(score, highScore, false);
         modalOverlay.classList.remove('hidden');
     } else {
         resetAndRestartGame();
@@ -183,11 +203,14 @@ function resetAndRestartGame() {
     document.querySelectorAll('.falling-note').forEach(note => note.remove());
     if (spawnTimer) clearTimeout(spawnTimer);
 
+    modalOverlay.querySelector('.modal-content').classList.remove('victory-glow');
+    modalTitle.classList.remove('victory-title');
+
     score = 0;
     combo = 0;
     lives = 3;
     songTime = 0;
-    currentFallDuration = 2600;
+    currentFallDuration = 3000; // Reinicia a la velocidad inicial suave
     updateUI();
     modalOverlay.classList.add('hidden');
     
@@ -203,14 +226,30 @@ function resetAndRestartGame() {
 resumeBtn.addEventListener('click', resetAndRestartGame);
 menuBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
 
-// --- GESTIÓN DE PUNTUACIONES Y RÉCORDS AL TERMINAR ---
+function generateScoreHTML(score, highScore, isNewRecord) {
+    let html = `
+        <div style="margin-bottom: 12px;">
+            <span style="font-size: 0.9rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px;">Puntuación Actual</span>
+            <div style="font-size: 2.5rem; font-weight: 900; color: #fff; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);">${score}</div>
+        </div>
+        <div style="background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.3); padding: 8px 15px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+            <span style="font-size: 1.2rem;">🏆</span>
+            <span style="color: #ffcc00; font-weight: bold; font-size: 0.95rem;">Récord: ${highScore}</span>
+        </div>
+    `;
+    if (isNewRecord) {
+        html += `<div style="margin-top: 10px; color: #00ff80; font-weight: bold; font-size: 1rem; text-shadow: 0 0 8px rgba(0, 255, 128, 0.8);">¡NUEVO RÉCORD! 🎉</div>`;
+    }
+    return html;
+}
+
 function checkAndSaveHighScore() {
-    let highScore = localStorage.getItem('neonHighScore') || 0;
+    let highScore = localStorage.getItem(STORAGE_KEY) || 0;
     let isNewRecord = false;
 
     if (score > highScore) {
         highScore = score;
-        localStorage.setItem('neonHighScore', highScore);
+        localStorage.setItem(STORAGE_KEY, highScore);
         isNewRecord = true;
     }
 
@@ -225,13 +264,10 @@ function triggerGameOver() {
     const { highScore, isNewRecord } = checkAndSaveHighScore();
 
     modalTitle.textContent = "¡GAME OVER!";
-    
-    let recordText = `Puntuación actual: <b>${score}</b><br>🏆 Récord: <b>${highScore}</b>`;
-    if (isNewRecord) {
-        recordText += `<br><span style="color: #00ff80; font-weight: bold;">¡NUEVO RÉCORD! 🎉</span>`;
-    }
-    finalScore.innerHTML = recordText;
+    modalTitle.classList.remove('victory-title');
+    modalOverlay.querySelector('.modal-content').classList.remove('victory-glow');
 
+    finalScore.innerHTML = generateScoreHTML(score, highScore, isNewRecord);
     modalOverlay.classList.remove('hidden');
 }
 
@@ -242,16 +278,31 @@ function triggerVictory() {
 
     const { highScore, isNewRecord } = checkAndSaveHighScore();
 
-    modalTitle.textContent = "¡VICTORIA!";
-    
-    let recordText = `Puntuación actual: <b>${score}</b><br>🏆 Récord: <b>${highScore}</b>`;
-    if (isNewRecord) {
-        recordText += `<br><span style="color: #00ff80; font-weight: bold;">¡NUEVO RÉCORD! 🎉</span>`;
-    }
-    finalScore.innerHTML = recordText;
+    const modalContentBox = modalOverlay.querySelector('.modal-content');
+    modalContentBox.classList.add('victory-glow');
 
+    modalTitle.textContent = "¡FELICIDADES! 🎉";
+    modalTitle.classList.add('victory-title');
+
+    let victoryHTML = `
+        <div style="font-size: 0.95rem; color: #00ff80; margin-bottom: 15px; font-weight: bold;">¡Has completado la canción! 🎵</div>
+        <div style="margin-bottom: 12px;">
+            <span style="font-size: 0.9rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px;">Puntuación Final</span>
+            <div style="font-size: 2.5rem; font-weight: 900; color: #fff; text-shadow: 0 0 10px rgba(0, 255, 128, 0.5);">${score}</div>
+        </div>
+        <div style="background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.3); padding: 8px 15px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+            <span style="font-size: 1.2rem;">🏆</span>
+            <span style="color: #ffcc00; font-weight: bold; font-size: 0.95rem;">Récord: ${highScore}</span>
+        </div>
+    `;
+
+    if (isNewRecord) {
+        victoryHTML += `<div style="margin-top: 10px; color: #00ff80; font-weight: bold; font-size: 1rem; text-shadow: 0 0 8px rgba(0, 255, 128, 0.8);">¡NUEVO RÉCORD MUNDIAL! 🌟</div>`;
+    }
+
+    finalScore.innerHTML = victoryHTML;
     modalOverlay.classList.remove('hidden');
 }
 
-// Arrancar el juego por primera vez
+// Iniciar juego por primera vez
 startSpawner();

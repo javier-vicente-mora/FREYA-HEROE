@@ -2,72 +2,63 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Pulse - Mobile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FREYA SKYE MUSIC - Partida</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
-<body class="game-body">
+<body>
 
-    <div class="game-wrapper">
-        <!-- Panel Superior -->
-        <header class="game-header">
-            <div class="stat-box">
-                <span class="stat-label">SCORE</span>
-                <span id="score-el" class="stat-value">0</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">COMBO</span>
-                <span id="combo-el" class="stat-value">0</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">LIVES</span>
-                <div id="lives-el" class="lives-icons">❤️❤️❤️</div>
-            </div>
-            <button id="pause-btn" class="pause-btn" title="Pausa">⏸</button>
-        </header>
+    <!-- TODO EL JUEGO DEBE ESTAR DENTRO DE ESTE CONTENEDOR -->
+    <div class="arcade-container">
+        
+        <div class="game-screen">
+            <!-- Header con Puntuación, Combo y Vidas -->
+            <header class="game-header">
+                <div class="stat-box">
+                    <span>SCORE</span>
+                    <strong id="score-el">0</strong>
+                </div>
+                <div class="stat-box">
+                    <span>COMBO</span>
+                    <strong id="combo-el">0</strong>
+                </div>
+                <div class="stat-box">
+                    <span>LIVES</span>
+                    <strong id="lives-el">❤️❤️❤️</strong>
+                </div>
+                <button id="pause-btn" class="pause-btn">⏸</button>
+            </header>
 
-        <!-- Feedback visual -->
-        <div id="feedback-txt" class="feedback-txt"></div>
+            <!-- Barra de Progreso de la Canción -->
+            <div class="song-progress-container">
+                <div class="progress-info">
+                    <span id="song-title-display">Cargando...</span>
+                    <span id="time-display">00:00 / 02:00</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                </div>
+            </div>
 
-        <!-- Área de las Pistas / Carriles -->
-        <div class="lane-container">
-            <div class="lane" data-col="0">
-                <div class="target-circle"></div>
-            </div>
-            <div class="lane" data-col="1">
-                <div class="target-circle"></div>
-            </div>
-            <div class="lane" data-col="2">
-                <div class="target-circle"></div>
-            </div>
-            <div class="lane" data-col="3">
-                <div class="target-circle"></div>
+            <!-- Tablero de Carriles y Notas -->
+            <div class="game-board">
+                <div class="lane"><div class="target-circle"></div></div>
+                <div class="lane"><div class="target-circle"></div></div>
+                <div class="lane"><div class="target-circle"></div></div>
+                <div class="lane"><div class="target-circle"></div></div>
+                <div id="feedback-txt" class="feedback-text"></div>
             </div>
         </div>
 
-        <!-- Panel Inferior -->
-        <footer class="game-footer">
-            <div class="song-info">
-                <span class="equalizer">📊</span>
-                <div>
-                    <small>SONG</small>
-                    <div id="song-title-display">Neon Pulse</div>
-                </div>
-            </div>
-            <div class="song-progress">
-                <span id="time-display">00:00 / 02:00</span>
-                <div class="progress-bar-bg">
-                    <div id="progress-bar-fill"></div>
-                </div>
-            </div>
-        </footer>
     </div>
 
-    <!-- Modal de Pausa / Game Over -->
+    <!-- Modal de Pausa / Game Over / Victoria -->
     <div id="modal-overlay" class="modal-overlay hidden">
         <div class="modal-content">
-            <h2 id="modal-title">JUEGO PAUSADO</h2>
-            <<p id="modal-score-text"><span id="final-score">0</span></p>
+            <h2 id="modal-title">¡PAUSA!</h2>
+            <div id="final-score">
+                <!-- Se rellena con JavaScript -->
+            </div>
             <div class="modal-buttons">
                 <button id="resume-btn" class="neon-btn">Reanudar</button>
                 <button id="menu-btn" class="neon-btn secondary">Menú Principal</button>
@@ -75,7 +66,8 @@
         </div>
     </div>
 
-    <audio id="game-audio" loop></audio>
+    <!-- Audio del Juego -->
+    <audio id="game-audio" preload="auto"></audio>
 
     <script src="script.js"></script>
 </body>
