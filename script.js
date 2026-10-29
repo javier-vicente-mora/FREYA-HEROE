@@ -137,32 +137,64 @@ function createNote(colIndex, isHold = false) {
 
     let noteProcessed = false;
 
-    // Evento único de toque / presión para ambos tipos de notas
-    note.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (!isPlaying || isStarting || noteProcessed) return;
+    if (isHold) {
+        // --- NOTA LARGA CON CONTROL DE TIEMPO DE PRESIÓN ---
+        note.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!isPlaying || isStarting || noteProcessed) return;
 
-        noteProcessed = true;
-        clearTimeout(note.dataset.missTimeout);
-
-        if (isHold) {
-            // Nota larga: al tocarla y mantenerla, se ilumina y da el excellent al completarse el tiempo
+            noteProcessed = true;
             note.classList.add('holding');
+            clearTimeout(note.dataset.missTimeout);
 
-            setTimeout(() => {
+            const startTime = Date.now();
+            let released = false;
+
+            const handleUp = () => {
+                window.removeEventListener('pointerup', handleUp);
+                if (released) return;
+                released = true;
+
+                const holdDuration = Date.now() - startTime;
+
                 if (note.parentElement) {
+                    note.remove();
+                    // Si soltó muy rápido (< 300ms), cuenta como fallo. Si mantuvo, es Excellent.
+                    if (holdDuration >= 300) {
+                        showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
+                    } else {
+                        registerMiss();
+                    }
+                }
+            };
+
+            window.addEventListener('pointerup', handleUp);
+
+            // Si el usuario mantiene el dedo pulsado todo el tiempo sin levantarlo
+            setTimeout(() => {
+                if (!released && note.parentElement) {
+                    window.removeEventListener('pointerup', handleUp);
+                    released = true;
                     note.remove();
                     showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
                 }
-            }, 700); // 0.7 segundos de duración de la retención
+            }, 700); // 0.7 segundos de retención
+        });
 
-        } else {
-            // Nota normal
+    } else {
+        // --- NOTA NORMAL (Un solo toque basta) ---
+        note.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!isPlaying || isStarting || noteProcessed) return;
+
+            noteProcessed = true;
+            clearTimeout(note.dataset.missTimeout);
             note.remove();
             showGradeAndScore("¡ACIERTO!", noteColor, 100, lane);
-        }
-    });
+        });
+    }
 
     lane.appendChild(note);
 
