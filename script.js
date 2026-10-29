@@ -129,47 +129,36 @@ function createNote(colIndex, isHold = false) {
     
     note.style.animationDuration = `${currentFallDuration}ms`;
 
+    let noteColor = '#00f3ff';
+    if (lane === lanes[0]) noteColor = '#ff007f';
+    else if (lane === lanes[1]) noteColor = '#00f3ff';
+    else if (lane === lanes[2]) noteColor = '#ffe600';
+    else if (lane === lanes[3]) noteColor = '#00ff80';
+
+    let noteProcessed = false;
+
+    // Evento único de toque / presión para ambos tipos de notas
     note.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        if (!isPlaying || isStarting) return;
+        if (!isPlaying || isStarting || noteProcessed) return;
 
+        noteProcessed = true;
         clearTimeout(note.dataset.missTimeout);
-        
-        let noteColor = '#00f3ff';
-        if (lane === lanes[0]) noteColor = '#ff007f';
-        else if (lane === lanes[1]) noteColor = '#00f3ff';
-        else if (lane === lanes[2]) noteColor = '#ffe600';
-        else if (lane === lanes[3]) noteColor = '#00ff80';
 
         if (isHold) {
+            // Nota larga: al tocarla y mantenerla, se ilumina y da el excellent al completarse el tiempo
             note.classList.add('holding');
-            let releasedEarly = false;
-
-            const releaseHandler = () => {
-                window.removeEventListener('pointerup', releaseHandler);
-                window.removeEventListener('pointercancel', releaseHandler);
-                
-                if (releasedEarly) return;
-                
-                if (note.parentElement) {
-                    note.remove();
-                    showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
-                }
-            };
-
-            window.addEventListener('pointerup', releaseHandler);
-            window.addEventListener('pointercancel', releaseHandler);
 
             setTimeout(() => {
                 if (note.parentElement) {
-                    releasedEarly = true;
                     note.remove();
                     showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
                 }
-            }, 1000);
+            }, 700); // 0.7 segundos de duración de la retención
 
         } else {
+            // Nota normal
             note.remove();
             showGradeAndScore("¡ACIERTO!", noteColor, 100, lane);
         }
@@ -177,9 +166,10 @@ function createNote(colIndex, isHold = false) {
 
     lane.appendChild(note);
 
+    // Margen por si se deja escapar la nota sin tocarla
     const extraTime = isHold ? 1500 : 0;
     const missTimeout = setTimeout(() => {
-        if (note.parentElement) {
+        if (note.parentElement && !noteProcessed) {
             note.remove();
             registerMiss();
         }
