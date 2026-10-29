@@ -94,24 +94,43 @@
         <div class="menu-screen">
             <div class="menu-content" style="max-width: 420px;">
                 <h1 class="game-title" style="font-size: 1.8rem;">SALA DE <span>LOGROS</span></h1>
-                <p class="game-subtitle">¡Desbloquea todos las insignias!</p>
+                <p class="game-subtitle">¡Desbloquea todas las insignias!</p>
 
                 <div class="achievements-grid" id="achievements-container">
                     <!-- Se genera dinámicamente desde JS -->
                 </div>
 
-                <a href="index.html" class="neon-btn secondary" style="margin-top: 10px; width: 100%;">Volver al Menú</a>
+                <a href="index.html" class="neon-btn secondary" style="margin-top: 10px; width: 100%; text-decoration: none;">Volver al Menú</a>
             </div>
         </div>
     </div>
 
+    <!-- Audio de la Intro en la pantalla de Logros -->
+    <audio id="intro-audio" src="canciones/intro.mp3" loop preload="auto"></audio>
+
     <script>
+        const introAudio = document.getElementById('intro-audio');
+
+        // Reproducir automáticamente la música de fondo en la página de logros
+        introAudio.play().catch(() => {
+            const unlockAudio = () => {
+                introAudio.play();
+                window.removeEventListener('click', unlockAudio);
+                window.removeEventListener('touchstart', unlockAudio);
+            };
+            window.addEventListener('click', unlockAudio);
+            window.addEventListener('touchstart', unlockAudio);
+        });
+
         const ALL_ACHIEVEMENTS = [
-            { id: 'logro0', title: '¡Ritmo Encendido!', desc: 'Consigue un combo de 25', img: 'logros/logro0.png' },
-            { id: 'logro1', title: 'Estrella Naciente', desc: 'Alcanza 50.000 puntos', img: 'logros/logro1.png' },
-            { id: 'logro2', title: 'Dominador del Teclado', desc: 'Alcanza 100.000 puntos', img: 'logros/logro2.png' },
-            { id: 'logro3', title: 'Incapaz de Fallar', desc: 'Consigue un combo de 50', img: 'logros/logro3.png' },
-            { id: 'logro4', title: 'Leyenda del Ritmo', desc: 'Alcanza 150.000 puntos', img: 'logros/logro4.png' }
+            { id: 'logro0', title: 'Ritmo Inicial', desc: 'Consigue un combo de 10', img: 'logros/logro0.png' },
+            { id: 'logro1', title: 'Fiebre del Neón', desc: 'Activa el Modo Fever (15 combo)', img: 'logros/logro1.png' },
+            { id: 'logro2', title: 'Estrella Naciente', desc: 'Alcanza 50.000 puntos', img: 'logros/logro2.png' },
+            { id: 'logro3', title: 'Dominador del Teclado', desc: 'Alcanza 100.000 puntos', img: 'logros/logro3.png' },
+            { id: 'logro4', title: 'Incapaz de Fallar', desc: 'Consigue un combo de 50', img: 'logros/logro4.png' },
+            { id: 'logro5', title: 'Maestro del Ritmo', desc: 'Alcanza 150.000 puntos', img: 'logros/logro5.png' },
+            { id: 'logro6', title: 'Pulso de Acero', desc: 'Consigue un combo de 75', img: 'logros/logro6.png' },
+            { id: 'logro7', title: 'Leyenda Absoluta', desc: 'Alcanza 200.000 puntos', img: 'logros/logro7.png' }
         ];
 
         const unlocked = JSON.parse(localStorage.getItem('freyaSkyeAchievements') || '[]');

@@ -51,13 +51,17 @@ if (selectedMusic !== 'off') {
 
 let lastHoldSpawnSecond = -1;
 
-// --- SISTEMA DE LOGROS ---
+
+// --- SISTEMA DE LOGROS (8 LOGROS) ---
 const ACHIEVEMENTS_LIST = {
-    'logro0': { id: 'logro0', img: 'logros/logro0.png', title: 'Combo 25', check: () => combo >= 25 },
-    'logro1': { id: 'logro1', img: 'logros/logro1.png', title: '50.000 Puntos', check: () => score >= 50000 },
-    'logro2': { id: 'logro2', img: 'logros/logro2.png', title: '100.000 Puntos', check: () => score >= 100000 },
-    'logro3': { id: 'logro3', img: 'logros/logro3.png', title: 'Combo 50', check: () => combo >= 50 },
-    'logro4': { id: 'logro4', img: 'logros/logro4.png', title: '150.000 Puntos', check: () => score >= 150000 }
+    'logro0': { id: 'logro0', img: 'logros/logro0.png', title: 'Ritmo Inicial', check: () => combo >= 10 },
+    'logro1': { id: 'logro1', img: 'logros/logro1.png', title: 'Fiebre del Neón', check: () => combo >= 15 },
+    'logro2': { id: 'logro2', img: 'logros/logro2.png', title: 'Estrella Naciente', check: () => score >= 50000 },
+    'logro3': { id: 'logro3', img: 'logros/logro3.png', title: 'Dominador del Teclado', check: () => score >= 100000 },
+    'logro4': { id: 'logro4', img: 'logros/logro4.png', title: 'Incapaz de Fallar', check: () => combo >= 50 },
+    'logro5': { id: 'logro5', img: 'logros/logro5.png', title: 'Maestro del Ritmo', check: () => score >= 150000 },
+    'logro6': { id: 'logro6', img: 'logros/logro6.png', title: 'Pulso de Acero', check: () => combo >= 75 },
+    'logro7': { id: 'logro7', img: 'logros/logro7.png', title: 'Leyenda Absoluta', check: () => score >= 200000 }
 };
 
 function checkAndUnlockAchievements() {
