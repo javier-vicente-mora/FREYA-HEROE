@@ -24,7 +24,7 @@ const pauseBtn = document.getElementById('pause-btn');
 const progressBarFill = document.getElementById('progress-bar-fill');
 const timeDisplay = document.getElementById('time-display');
 const songTitleDisplay = document.getElementById('song-title-display');
-
+const arcadeContainer = document.querySelector('.arcade-container');
 
 // Clave para guardar el récord en localStorage
 const STORAGE_KEY = 'freyaSkyeMusicHighScore';
@@ -45,7 +45,9 @@ if (selectedMusic !== 'off') {
     songTitleDisplay.textContent = 'Modo Silencioso';
 }
 
-// Iniciar bucle de creación de notas
+let lastHoldSpawnSecond = -1;
+
+// --- BUCLE DE CREACIÓN DE NOTAS ---
 function startSpawner() {
     if (spawnTimer) clearTimeout(spawnTimer);
 
@@ -53,125 +55,138 @@ function startSpawner() {
         if (!isPlaying) return;
 
         const firstLaneIndex = Math.floor(Math.random() * 4);
-        createNote(firstLaneIndex);
+        
+        // Lanzar una Nota Sostenida EXACTAMENTE cada 5 segundos y solo una
+        let forceHold = false;
+        if (songTime > 0 && songTime % 5 === 0 && songTime !== lastHoldSpawnSecond) {
+            forceHold = true;
+            lastHoldSpawnSecond = songTime;
+        }
 
-        // Probabilidad de nota doble (35%)
-        if (Math.random() < 0.35) {
+        const isHold = forceHold; 
+        createNote(firstLaneIndex, isHold);
+
+        // Si no es sostenida, probabilidad de nota doble (30%)
+        if (!isHold && Math.random() < 0.3) {
             let secondLaneIndex;
             do {
                 secondLaneIndex = Math.floor(Math.random() * 4);
             } while (secondLaneIndex === firstLaneIndex);
-            createNote(secondLaneIndex);
+            createNote(secondLaneIndex, false);
         }
 
-        const randomDelay = Math.floor(Math.random() * 600 + 400);
+        const randomDelay = Math.floor(Math.random() * 500 + 450);
         spawnTimer = setTimeout(scheduleNextSpawn, randomDelay);
     }
     
     scheduleNextSpawn();
 }
 
-function createNote(colIndex) {
+function createNote(colIndex, isHold = false) {
     const lane = lanes[colIndex];
     const note = document.createElement('div');
     note.classList.add('falling-note');
     
-    note.style.animationDuration = `${currentFallDuration}ms`;
+    if (isHold) {
+        note.classList.add('hold-note');
+        note.dataset.isHold = "true";
+    }
     
-    // Toque directo en la nota
-    const handleNotePress = (e) => {
+    note.style.animationDuration = `${currentFallDuration}ms`;
+
+    note.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         e.preventDefault();
         if (!isPlaying || isStarting) return;
 
         clearTimeout(note.dataset.missTimeout);
         
-        // Definir el color de la chispa según el carril
         let noteColor = '#00f3ff';
         if (lane === lanes[0]) noteColor = '#ff007f';
         else if (lane === lanes[1]) noteColor = '#00f3ff';
         else if (lane === lanes[2]) noteColor = '#ffe600';
         else if (lane === lanes[3]) noteColor = '#00ff80';
 
-        note.remove(); // Elimina la nota inmediatamente al acertar
+        if (isHold) {
+            // Nota Sostenida: Con que la mantengas pulsada un poco y la sueltes al terminar, cuenta como Excellent
+            note.classList.add('holding');
+            let releasedEarly = false;
 
-        showFeedback("¡ACIERTO!", noteColor);
-        score += 100 * (combo > 0 ? combo : 1);
-        combo++;
-        
-        // --- ¡AQUÍ ESTABA EL TRUCO! Lanzamos las partículas ---
-        spawnParticles(lane, noteColor);
-        
-        updateUI();
-    };
+            const releaseHandler = () => {
+                window.removeEventListener('pointerup', releaseHandler);
+                window.removeEventListener('pointercancel', releaseHandler);
+                
+                if (releasedEarly) return;
+                
+                // Si aguantaste lo suficiente hasta que la nota casi termina o se va
+                if (note.parentElement) {
+                    note.remove();
+                    showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
+                }
+            };
 
-    note.addEventListener('pointerdown', handleNotePress);
+            window.addEventListener('pointerup', releaseHandler);
+            window.addEventListener('pointercancel', releaseHandler);
+
+            // Temporizador de seguridad por si se olvida de soltar o pasa el tiempo de la nota
+            setTimeout(() => {
+                if (note.parentElement) {
+                    releasedEarly = true;
+                    note.remove();
+                    showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
+                }
+            }, 1000); // 1 segundo de duración de la retención
+
+        } else {
+            // Nota normal
+            note.remove();
+            showGradeAndScore("¡ACIERTO!", noteColor, 100, lane);
+        }
+    });
+
     lane.appendChild(note);
 
-    // Si la nota llega abajo sin ser tocada (MISS)
+    const extraTime = isHold ? 1500 : 0;
     const missTimeout = setTimeout(() => {
         if (note.parentElement) {
             note.remove();
             registerMiss();
         }
-    }, currentFallDuration);
+    }, currentFallDuration + extraTime);
 
     note.dataset.missTimeout = missTimeout;
 }
 
-// Fallo si se toca el carril en vacío
-// --- SISTEMA DE TOQUE POR CARRIL (Optimizado y sin bloqueo de aciertos) ---
-// --- SISTEMA DE TOQUE POR CARRIL (Optimizado y sin bloqueo de aciertos) ---
+// --- CARRIL: SOLO REGISTRA FALLO SI TOCAS EL ESPACIO VACÍO ---
 lanes.forEach((lane) => {
     lane.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         if (!isPlaying || isStarting) return;
-
-        const notesInLane = lane.querySelectorAll('.falling-note');
-        let hit = false;
-        let noteColor = '#00f3ff';
-
-        notesInLane.forEach(note => {
-            const rect = note.getBoundingClientRect();
-            const laneRect = lane.getBoundingClientRect();
-            const distanceFromBottom = laneRect.bottom - rect.bottom;
-
-            if (distanceFromBottom >= -20 && distanceFromBottom <= 110) {
-                clearTimeout(note.dataset.missTimeout);
-                note.remove(); 
-                hit = true;
-                
-                // Definir el color de la chispa según el carril
-                if (lane === lanes[0]) noteColor = '#ff007f';
-                if (lane === lanes[1]) noteColor = '#00f3ff';
-                if (lane === lanes[2]) noteColor = '#ffe600';
-                if (lane === lanes[3]) noteColor = '#00ff80';
-            }
-        });
-
-        if (hit) {
-            showFeedback("¡ACIERTO!", noteColor);
-            score += 100 * (combo > 0 ? combo : 1);
-            combo++;
-            spawnParticles(lane, noteColor); // <-- Genera las chispas aquí
-            updateUI();
-        } else {
-            registerMiss();
-        }
+        
+        // Si se ejecuta esto, significa que pulsaste el carril pero NO tocaste una nota
+        registerMiss();
     });
 });
 
+// Función auxiliar para aciertos
+function showGradeAndScore(text, color, pointsMultiplier, lane) {
+    showFeedback(text, color);
+    score += pointsMultiplier * (combo > 0 ? combo : 1);
+    combo++;
+    spawnParticles(lane, color);
+    updateUI();
+}
+
 // Función que crea las chispas de colores
 function spawnParticles(lane, color) {
-    for (let i = 0; i < 8; i++) { // 8 chispas por acierto para que sea más vistoso
+    for (let i = 0; i < 8; i++) {
         const p = document.createElement('div');
         p.classList.add('particle');
         p.style.backgroundColor = color;
-        p.style.color = color; // Para que funcione el box-shadow de brillo
+        p.style.color = color;
 
-        // Ángulo aleatorio en abanico hacia los lados y arriba
-        const angle = (Math.random() * Math.PI); // de 0 a 180 grados hacia arriba
-        const distance = Math.random() * 50 + 20; // Distancia de dispersión
+        const angle = (Math.random() * Math.PI); 
+        const distance = Math.random() * 50 + 20;
         
         const dx = Math.cos(angle) * distance - (distance / 2);
         const dy = -Math.sin(angle) * distance;
@@ -181,7 +196,6 @@ function spawnParticles(lane, color) {
 
         lane.appendChild(p);
         
-        // Eliminar la partícula al terminar la animación (400ms)
         setTimeout(() => {
             p.remove();
         }, 400);
@@ -191,11 +205,8 @@ function spawnParticles(lane, color) {
 function registerMiss() {
     combo = 0;
     lives--;
-    showFeedback("¡FALLO!", "#ff007f"); // <-- Quita el cuadrito de color de ahí
-
-    // --- ACTIVAR SACUDIDA DE PANTALLA ---
+    showFeedback("¡FALLO!", "#ff007f");
     triggerScreenShake();
-
     updateUI();
 
     if (lives <= 0) {
@@ -203,7 +214,6 @@ function registerMiss() {
     }
 }
 
-// Función que aplica y quita la clase de sacudida durante 200ms
 function triggerScreenShake() {
     arcadeContainer.classList.add('shake');
     setTimeout(() => {
@@ -211,26 +221,20 @@ function triggerScreenShake() {
     }, 200);
 }
 
-
-
 let feedbackTimeout = null;
 
 function showFeedback(text, color) {
     feedbackTxt.textContent = text;
     feedbackTxt.style.color = color;
     feedbackTxt.classList.remove('show');
-    void feedbackTxt.offsetWidth; // Reinicia la animación
+    void feedbackTxt.offsetWidth;
     feedbackTxt.classList.add('show');
 
-    // Limpia el temporizador anterior si existe y oculta el texto tras 350 milisegundos
     if (feedbackTimeout) clearTimeout(feedbackTimeout);
     feedbackTimeout = setTimeout(() => {
         feedbackTxt.classList.remove('show');
     }, 350);
 }
-
-// Referencia al contenedor arcade (si no la tienes arriba del todo, puedes declararla o usar querySelector)
-const arcadeContainer = document.querySelector('.arcade-container');
 
 function updateUI() {
     scoreEl.textContent = score;
@@ -240,7 +244,6 @@ function updateUI() {
     for (let i = 0; i < lives; i++) hearts += '❤️';
     livesEl.textContent = hearts || '💔';
 
-    // --- ACTIVAR / DESACTIVAR MODO FEVER ---
     if (combo >= 15) {
         arcadeContainer.classList.add('fever-mode');
     } else {
@@ -263,7 +266,6 @@ const progressInterval = setInterval(() => {
     let progressPercent = (songTime / maxSongTime) * 100;
     progressBarFill.style.width = `${progressPercent}%`;
 
-    // Aceleración suave cada 5 segundos
     if (songTime % 5 === 0) {
         if (currentFallDuration > 1400) {
             currentFallDuration -= 120; 
@@ -277,7 +279,6 @@ const progressInterval = setInterval(() => {
     }
 }, 1000);
 
-// Controles de pausa
 pauseBtn.addEventListener('click', togglePause);
 
 function togglePause() {
@@ -309,11 +310,12 @@ function resetAndRestartGame() {
     combo = 0;
     lives = 3;
     songTime = 0;
+    lastHoldSpawnSecond = -1;
     currentFallDuration = 3000;
+    arcadeContainer.classList.remove('fever-mode');
     updateUI();
     modalOverlay.classList.add('hidden');
     
-    // Escudo exacto de 300ms para ignorar el residuo del botón de reanudar
     isStarting = true;
     setTimeout(() => {
         isStarting = false;
@@ -328,7 +330,6 @@ function resetAndRestartGame() {
     startSpawner();
 }
 
-// Botones del Modal con pointerdown seguro
 resumeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     resetAndRestartGame();
@@ -371,10 +372,9 @@ function checkAndSaveHighScore() {
 }
 
 function triggerGameOver() {
-    if (!isPlaying) return; // Evita que se ejecute varias veces si ya estamos en Game Over
+    if (!isPlaying) return; 
     isPlaying = false;
     
-    // Limpia todas las notas que estén cayendo en el momento de morir
     document.querySelectorAll('.falling-note').forEach(note => {
         clearTimeout(note.dataset.missTimeout);
         note.remove();
@@ -382,12 +382,10 @@ function triggerGameOver() {
 
     if (spawnTimer) clearTimeout(spawnTimer);
     
-    // Detenemos la música de fondo
     if (selectedMusic !== 'off') {
         gameAudio.pause();
     }
 
-    // Reproducir sonido de Game Over una sola vez
     const gameOverAudio = new Audio('canciones/game_over.mp3');
     gameOverAudio.volume = 1.0;
     gameOverAudio.play().catch(e => console.log("Audio de Game Over bloqueado:", e));
@@ -396,6 +394,7 @@ function triggerGameOver() {
 
     modalTitle.textContent = "¡GAME OVER!";
     modalTitle.classList.remove('victory-title');
+    arcadeContainer.classList.remove('fever-mode');
     modalOverlay.querySelector('.modal-content').classList.remove('victory-glow');
 
     finalScore.innerHTML = generateScoreHTML(score, highScore, isNewRecord);
@@ -411,6 +410,7 @@ function triggerVictory() {
 
     const modalContentBox = modalOverlay.querySelector('.modal-content');
     modalContentBox.classList.add('victory-glow');
+    arcadeContainer.classList.remove('fever-mode');
 
     modalTitle.textContent = "¡FELICIDADES! 🎉";
     modalTitle.classList.add('victory-title');

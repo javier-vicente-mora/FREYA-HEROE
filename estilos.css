@@ -476,3 +476,19 @@ html, body {
     color: #555;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
+
+/* --- NOTAS SOSTENIDAS (HOLD NOTES) --- */
+.falling-note.hold-note {
+    width: 48px;
+    height: 120px; /* Nota alargada */
+    border-radius: 15px;
+    border: 2px dashed #ffffff;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.8), currentColor);
+}
+
+/* Efecto visual cuando la nota sostenida está siendo pulsada correctamente */
+.falling-note.holding {
+    filter: brightness(1.4);
+    box-shadow: 0 0 25px #ffffff, 0 0 35px currentColor !important;
+    transform: scale(0.95);
+}
