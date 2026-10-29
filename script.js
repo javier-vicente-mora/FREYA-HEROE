@@ -5,6 +5,9 @@ let isPlaying = true;
 let spawnTimer = null;
 let isStarting = false; 
 
+// Registro de logros en esta sesión
+let currentSessionAchievements = [];
+
 // Velocidad inicial (en milisegundos que tarda la nota en caer)
 let currentFallDuration = 3000; 
 
@@ -26,8 +29,9 @@ const timeDisplay = document.getElementById('time-display');
 const songTitleDisplay = document.getElementById('song-title-display');
 const arcadeContainer = document.querySelector('.arcade-container');
 
-// Clave para guardar el récord en localStorage
+// Claves de localStorage
 const STORAGE_KEY = 'freyaSkyeMusicHighScore';
+const ACHIEVEMENTS_KEY = 'freyaSkyeAchievements';
 
 // Cargar música seleccionada
 const selectedMusic = localStorage.getItem('selectedMusic') || 'off';
@@ -47,6 +51,35 @@ if (selectedMusic !== 'off') {
 
 let lastHoldSpawnSecond = -1;
 
+// --- SISTEMA DE LOGROS ---
+const ACHIEVEMENTS_LIST = {
+    'logro0': { id: 'logro0', img: 'logros/logro0.png', title: 'Combo 25', check: () => combo >= 25 },
+    'logro1': { id: 'logro1', img: 'logros/logro1.png', title: '50.000 Puntos', check: () => score >= 50000 },
+    'logro2': { id: 'logro2', img: 'logros/logro2.png', title: '100.000 Puntos', check: () => score >= 100000 },
+    'logro3': { id: 'logro3', img: 'logros/logro3.png', title: 'Combo 50', check: () => combo >= 50 },
+    'logro4': { id: 'logro4', img: 'logros/logro4.png', title: '150.000 Puntos', check: () => score >= 150000 }
+};
+
+function checkAndUnlockAchievements() {
+    let unlocked = JSON.parse(localStorage.getItem(ACHIEVEMENTS_KEY) || '[]');
+    let newlyUnlocked = [];
+
+    Object.keys(ACHIEVEMENTS_LIST).forEach(key => {
+        const ach = ACHIEVEMENTS_LIST[key];
+        if (ach.check()) {
+            if (!unlocked.includes(ach.id)) {
+                unlocked.push(ach.id);
+            }
+            if (!currentSessionAchievements.includes(ach.id)) {
+                currentSessionAchievements.push(ach.id);
+                newlyUnlocked.push(ach);
+            }
+        }
+    });
+
+    localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(unlocked));
+}
+
 // --- BUCLE DE CREACIÓN DE NOTAS ---
 function startSpawner() {
     if (spawnTimer) clearTimeout(spawnTimer);
@@ -56,7 +89,6 @@ function startSpawner() {
 
         const firstLaneIndex = Math.floor(Math.random() * 4);
         
-        // Lanzar una Nota Sostenida EXACTAMENTE cada 5 segundos y solo una
         let forceHold = false;
         if (songTime > 0 && songTime % 5 === 0 && songTime !== lastHoldSpawnSecond) {
             forceHold = true;
@@ -66,7 +98,6 @@ function startSpawner() {
         const isHold = forceHold; 
         createNote(firstLaneIndex, isHold);
 
-        // Si no es sostenida, probabilidad de nota doble (30%)
         if (!isHold && Math.random() < 0.3) {
             let secondLaneIndex;
             do {
@@ -108,7 +139,6 @@ function createNote(colIndex, isHold = false) {
         else if (lane === lanes[3]) noteColor = '#00ff80';
 
         if (isHold) {
-            // Nota Sostenida: Con que la mantengas pulsada un poco y la sueltes al terminar, cuenta como Excellent
             note.classList.add('holding');
             let releasedEarly = false;
 
@@ -118,7 +148,6 @@ function createNote(colIndex, isHold = false) {
                 
                 if (releasedEarly) return;
                 
-                // Si aguantaste lo suficiente hasta que la nota casi termina o se va
                 if (note.parentElement) {
                     note.remove();
                     showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
@@ -128,17 +157,15 @@ function createNote(colIndex, isHold = false) {
             window.addEventListener('pointerup', releaseHandler);
             window.addEventListener('pointercancel', releaseHandler);
 
-            // Temporizador de seguridad por si se olvida de soltar o pasa el tiempo de la nota
             setTimeout(() => {
                 if (note.parentElement) {
                     releasedEarly = true;
                     note.remove();
                     showGradeAndScore("¡EXCELLENT!", noteColor, 300, lane);
                 }
-            }, 1000); // 1 segundo de duración de la retención
+            }, 1000);
 
         } else {
-            // Nota normal
             note.remove();
             showGradeAndScore("¡ACIERTO!", noteColor, 100, lane);
         }
@@ -157,27 +184,23 @@ function createNote(colIndex, isHold = false) {
     note.dataset.missTimeout = missTimeout;
 }
 
-// --- CARRIL: SOLO REGISTRA FALLO SI TOCAS EL ESPACIO VACÍO ---
 lanes.forEach((lane) => {
     lane.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         if (!isPlaying || isStarting) return;
-        
-        // Si se ejecuta esto, significa que pulsaste el carril pero NO tocaste una nota
         registerMiss();
     });
 });
 
-// Función auxiliar para aciertos
 function showGradeAndScore(text, color, pointsMultiplier, lane) {
     showFeedback(text, color);
     score += pointsMultiplier * (combo > 0 ? combo : 1);
     combo++;
     spawnParticles(lane, color);
+    checkAndUnlockAchievements(); // Comprobar logros al aumentar puntuación / combo
     updateUI();
 }
 
-// Función que crea las chispas de colores
 function spawnParticles(lane, color) {
     for (let i = 0; i < 8; i++) {
         const p = document.createElement('div');
@@ -251,7 +274,6 @@ function updateUI() {
     }
 }
 
-// Progreso de la canción (2 minutos = 120 segundos)
 let songTime = 0;
 const maxSongTime = 120; 
 
@@ -311,6 +333,7 @@ function resetAndRestartGame() {
     lives = 3;
     songTime = 0;
     lastHoldSpawnSecond = -1;
+    currentSessionAchievements = [];
     currentFallDuration = 3000;
     arcadeContainer.classList.remove('fever-mode');
     updateUI();
@@ -352,9 +375,37 @@ function generateScoreHTML(score, highScore, isNewRecord) {
             <span style="color: #ffcc00; font-weight: bold; font-size: 0.95rem;">Récord: ${highScore}</span>
         </div>
     `;
+
+    // Renderizar Logros Conseguidos en esta partida
+    if (currentSessionAchievements.length > 0) {
+        html += `
+            <div class="unlocked-achievements-container">
+                <h4>🏆 LOGROS DE LA PARTIDA 🏆</h4>
+                <div class="achievements-row">
+        `;
+        currentSessionAchievements.forEach(achId => {
+            const ach = ACHIEVEMENTS_LIST[achId];
+            if (ach) {
+                html += `<img src="${ach.img}" title="${ach.title}" class="achievement-circle-item" onerror="this.src='https://via.placeholder.com/48?text=🏆'">`;
+            }
+        });
+        html += `
+                </div>
+            </div>
+        `;
+    }
+
     if (isNewRecord) {
         html += `<div style="margin-top: 10px; color: #00ff80; font-weight: bold; font-size: 1rem; text-shadow: 0 0 8px rgba(0, 255, 128, 0.8);">¡NUEVO RÉCORD! 🎉</div>`;
     }
+
+    // Botón para ir a la Sala de Logros
+    html += `
+        <a href="logros.html" class="neon-btn secondary" style="margin-top: 15px; display: block; text-decoration: none; font-size: 0.9rem; padding: 10px;">
+            🏆 Ver Todos los Logros
+        </a>
+    `;
+
     return html;
 }
 
@@ -415,23 +466,7 @@ function triggerVictory() {
     modalTitle.textContent = "¡FELICIDADES! 🎉";
     modalTitle.classList.add('victory-title');
 
-    let victoryHTML = `
-        <div style="font-size: 0.95rem; color: #00ff80; margin-bottom: 15px; font-weight: bold;">¡Has completado la canción! 🎵</div>
-        <div style="margin-bottom: 12px;">
-            <span style="font-size: 0.9rem; color: #a0aec0; text-transform: uppercase; letter-spacing: 1px;">Puntuación Final</span>
-            <div style="font-size: 2.5rem; font-weight: 900; color: #fff; text-shadow: 0 0 10px rgba(0, 255, 128, 0.5);">${score}</div>
-        </div>
-        <div style="background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.3); padding: 8px 15px; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-            <span style="font-size: 1.2rem;">🏆</span>
-            <span style="color: #ffcc00; font-weight: bold; font-size: 0.95rem;">Récord: ${highScore}</span>
-        </div>
-    `;
-
-    if (isNewRecord) {
-        victoryHTML += `<div style="margin-top: 10px; color: #00ff80; font-weight: bold; font-size: 1rem; text-shadow: 0 0 8px rgba(0, 255, 128, 0.8);">¡NUEVO RÉCORD MUNDIAL! 🌟</div>`;
-    }
-
-    finalScore.innerHTML = victoryHTML;
+    finalScore.innerHTML = generateScoreHTML(score, highScore, isNewRecord);
     modalOverlay.classList.remove('hidden');
 }
 

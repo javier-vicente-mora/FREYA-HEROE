@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FREYA SKYE MUSIC - Logros</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .achievements-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .achievement-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(10, 13, 26, 0.8);
+            border: 2px solid rgba(0, 243, 255, 0.2);
+            border-radius: 15px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .achievement-card.unlocked {
+            border-color: #00ff80;
+            box-shadow: 0 0 15px rgba(0, 255, 128, 0.3);
+            background: rgba(0, 255, 128, 0.05);
+        }
+
+        .achievement-card.locked {
+            opacity: 0.4;
+            filter: grayscale(1);
+        }
+
+        .achievement-img {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #00f3ff;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            flex-shrink: 0;
+        }
+
+        .achievement-card.unlocked .achievement-img {
+            border-color: #00ff80;
+            box-shadow: 0 0 10px rgba(0, 255, 128, 0.8);
+        }
+
+        .achievement-info {
+            text-align: left;
+        }
+
+        .achievement-info h3 {
+            font-size: 0.95rem;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+
+        .achievement-info p {
+            font-size: 0.75rem;
+            color: #a0aec0;
+        }
+
+        .status-tag {
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        .unlocked .status-tag {
+            background: rgba(0, 255, 128, 0.2);
+            color: #00ff80;
+        }
+
+        .locked .status-tag {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body class="menu-body">
+
+    <div class="arcade-container">
+        <div class="menu-screen">
+            <div class="menu-content" style="max-width: 420px;">
+                <h1 class="game-title" style="font-size: 1.8rem;">SALA DE <span>LOGROS</span></h1>
+                <p class="game-subtitle">¡Desbloquea todos las insignias!</p>
+
+                <div class="achievements-grid" id="achievements-container">
+                    <!-- Se genera dinámicamente desde JS -->
+                </div>
+
+                <a href="index.html" class="neon-btn secondary" style="margin-top: 10px; width: 100%;">Volver al Menú</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ALL_ACHIEVEMENTS = [
+            { id: 'logro0', title: '¡Ritmo Encendido!', desc: 'Consigue un combo de 25', img: 'logros/logro0.png' },
+            { id: 'logro1', title: 'Estrella Naciente', desc: 'Alcanza 50.000 puntos', img: 'logros/logro1.png' },
+            { id: 'logro2', title: 'Dominador del Teclado', desc: 'Alcanza 100.000 puntos', img: 'logros/logro2.png' },
+            { id: 'logro3', title: 'Incapaz de Fallar', desc: 'Consigue un combo de 50', img: 'logros/logro3.png' },
+            { id: 'logro4', title: 'Leyenda del Ritmo', desc: 'Alcanza 150.000 puntos', img: 'logros/logro4.png' }
+        ];
+
+        const unlocked = JSON.parse(localStorage.getItem('freyaSkyeAchievements') || '[]');
+        const container = document.getElementById('achievements-container');
+
+        ALL_ACHIEVEMENTS.forEach(ach => {
+            const isUnlocked = unlocked.includes(ach.id);
+            const card = document.createElement('div');
+            card.className = `achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+            
+            card.innerHTML = `
+                <img src="${ach.img}" alt="${ach.title}" class="achievement-img" onerror="this.src='https://via.placeholder.com/55?text=🏆'">
+                <div class="achievement-info">
+                    <h3>${ach.title}</h3>
+                    <p>${ach.desc}</p>
+                    <span class="status-tag">${isUnlocked ? 'DESBLOQUEADO ✔' : 'BLOQUEADO 🔒'}</span>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    </script>
+</body>
+</html>

@@ -59,6 +59,10 @@
             </div>
 
             <button id="start-btn" class="neon-btn">JUGAR AHORA</button>
+
+            <!-- Botón de Logros añadido -->
+            <a href="logros.html" class="neon-btn secondary" style="margin-top: 10px; text-decoration: none;">VER LOGROS 🏆</a>
+            
         </div>
 
         <!-- Autor fuera del cuadro y centrado debajo -->
@@ -68,9 +72,28 @@
 
     </div>
 
+    <!-- Audio de la Intro en el menú -->
+    <audio id="intro-audio" src="canciones/intro.mp3" loop preload="auto"></audio>
+
     <script>
+        const introAudio = document.getElementById('intro-audio');
+
+        // Intentar reproducir automáticamente al cargar la página
+        introAudio.play().catch(() => {
+            // Si el navegador bloquea el autoplay, se activará en cuanto el usuario haga cualquier clic o toque en la pantalla
+            const unlockAudio = () => {
+                introAudio.play();
+                window.removeEventListener('click', unlockAudio);
+                window.removeEventListener('touchstart', unlockAudio);
+            };
+            window.addEventListener('click', unlockAudio);
+            window.addEventListener('touchstart', unlockAudio);
+        });
+
         document.getElementById('start-btn').addEventListener('click', () => {
             const selectedMusic = document.getElementById('music-select').value;
+            // Detenemos la música del menú antes de cambiar de página
+            introAudio.pause();
             // Guardamos la música seleccionada en localStorage para usarla en juego.html
             localStorage.setItem('selectedMusic', selectedMusic);
             window.location.href = 'juego.html';
